@@ -17,7 +17,7 @@ class UserRolesTableSeeder extends Seeder
         DB::table('user_roles')->insert([
             ['name'=>'Super Admin','created_at'=>Carbon::now()->toDateTimeString(),'updated_at'=>Carbon::now()->toDateTimeString()],
             ['name'=>'Admin','created_at'=>Carbon::now()->toDateTimeString(),'updated_at'=>Carbon::now()->toDateTimeString()],
-            ['name'=>'User','created_at'=>Carbon::now()->toDateTimeString(),'updated_at'=>Carbon::now()->toDateTimeString()],
+            // ['name'=>'User','created_at'=>Carbon::now()->toDateTimeString(),'updated_at'=>Carbon::now()->toDateTimeString()],
         ]);
     }
 }

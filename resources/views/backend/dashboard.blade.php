@@ -64,6 +64,8 @@
             </div>
         </div>
     </div>
+
+    <button class="btn btn-danger" id="hard_freash">Hard refreash</button>
 </div>
 
 <div class="row">

@@ -2,15 +2,13 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
-
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * The model to policy mappings for the application.
+     * The policy mappings for the application.
      *
      * @var array<class-string, class-string>
      */
@@ -20,17 +18,23 @@ class AuthServiceProvider extends ServiceProvider
 
     /**
      * Register any authentication / authorization services.
+     *
+     * @return void
      */
-    public function boot(): void
+    public function boot()
     {
         $this->registerPolicies();
 
         Gate::define('super-admin', function($user){
             return $user->role->name == "Super Admin";
         });
+        
+        Gate::define('only-contractor', function($user){
+            return $user->role->name == "Contractor";
+        });
 
-        Gate::define('admin', function($user){
-            return $user->role->name == "Super Admin" || $user->role->name == "Admin";
+        Gate::define('contractor', function($user){
+            return $user->role->name == "Super Admin" || $user->role->name == "Contractor";
         });
     }
 }

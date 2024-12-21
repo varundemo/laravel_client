@@ -7,6 +7,12 @@
             <div class="card">
                 <div class="card-header">{{ __('Login') }}</div>
 
+                
+                @if(session()->has('pending_error'))
+                <div class="alert alert-danger">
+                    {{ session('pending_error') }}
+                </div>
+            @endif
                 <div class="card-body">
                     <form method="POST" action="{{ route('login') }}">
                         @csrf

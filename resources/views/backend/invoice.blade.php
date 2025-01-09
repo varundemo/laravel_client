@@ -14,6 +14,7 @@
                         <th>Contractor ID</th>
                         {{-- <th>Payment Id</th> --}}
                         <th>Amount</th>
+                        <th>Transaction Type</th>
                         <th>Receipt URL</th>
                         <th>Date</th>
                         <th>Time</th>
@@ -27,8 +28,11 @@
                         <td>{{ $detail->contractor_id }}</td>
                         {{-- <td>{{ $detail->payment_id }}</td> --}}
                         <td>{{ $detail->amount }}</td>
+                        <td>{{ $detail->transaction_type }}</td>
                         <td>
+                            @if ($detail->transaction_type != "Debited")
                             <a href="{{ $detail->receipt_url }}" target="_blank" class="btn btn-warning" download>Download Invoice</a>
+                            @endif
                         </td>
                         <td>{{ date("Y-m-d", strtotime($detail->created_at))  }}</td>
                         <td>{{ date("H:i", strtotime($detail->created_at))  }}</td>

@@ -14,8 +14,8 @@ use App\Models\Wallet;
 use App\Models\Service;
 use Illuminate\Support\Facades\Mail;
 use App\Models\ContractorService;
-
-
+use App\Models\Payment;
+use Illuminate\Support\Str;
 
 class LeadController extends Controller
 {
@@ -361,6 +361,17 @@ class LeadController extends Controller
                 $new_balance = $old_balance - $service_cost;
                 $wallet->balance = $new_balance;
                 $wallet->save();
+
+                $Payment = new Payment();
+                $Payment->contractor_id = $contractor_id;
+                $Payment->amount = $service_cost;
+                $Payment->payment_id = 'db_' . Str::random(24);
+                $Payment->currency = 'usd';
+                $Payment->captured = '1';
+                $Payment->paid = '1';
+                $Payment->status = 'succeeded';
+                $Payment->transaction_type = 'Debited';
+                $Payment->save();
         
                 $LeadAssign = new LeadAssign(); // Assuming you need to create a new instance for each contractor_id
                 $LeadAssign->contractor_id = $contractor_id;

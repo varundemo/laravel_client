@@ -11,6 +11,12 @@ class LeadAssign extends Model
 
     protected $table = 'lead_assign';
 
+    protected $fillable = [
+        'contractor_id',
+        'lead_id',
+    ];
+    
+
        // Relationships
        public function contractor()
        {

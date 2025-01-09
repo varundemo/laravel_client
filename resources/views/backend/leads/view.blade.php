@@ -59,7 +59,8 @@ Diljit_1234
                         <td>{{ $Lead->category }}</td>
                         
                         <td>
-                              {{ ( (!empty($Lead->contractor_id) && $Lead->contractor_id != "unassigned") ? $Lead->first_name." ".$Lead->last_name : ucfirst($Lead->contractor_id) ) }}
+                              {{-- {{ ( (!empty($Lead->contractor_id) && $Lead->contractor_id != "unassigned") ? $Lead->first_name." ".$Lead->last_name : ucfirst($Lead->contractor_id) ) }} --}}
+                              {{ $Lead->contractors ?: 'Unassigned' }}
                         </td>
                         <td>{{ $Lead->zip }}</td>
                         <td>{{ date("Y-m-d", strtotime($Lead->created_at)) }}</td>

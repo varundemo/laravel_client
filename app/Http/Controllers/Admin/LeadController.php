@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\ContractorService;
 use App\Models\Payment;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class LeadController extends Controller
 {
@@ -27,7 +28,29 @@ class LeadController extends Controller
         $title = 'Leads';
         $Leads = Lead::get();
         if (Gate::allows('super-admin')) {
-             $Leads = Lead::leftjoin('lead_assign','leads.id', '=', 'lead_assign.lead_id')->leftjoin('contractor_profiles','contractor_profiles.id','=','lead_assign.contractor_id')->select('leads.*', 'lead_assign.contractor_id','contractor_profiles.first_name', 'contractor_profiles.last_name')->latest()->get();
+            $Leads = Lead::leftJoin('lead_assign', 'leads.id', '=', 'lead_assign.lead_id')
+            ->leftJoin('contractor_profiles', 'contractor_profiles.id', '=', 'lead_assign.contractor_id')
+            ->select(
+                'leads.id',
+                'leads.name',
+                'leads.email',
+                'leads.category',
+                'leads.zip',
+                'leads.created_at',
+                DB::raw("GROUP_CONCAT(CONCAT(contractor_profiles.first_name, ' ', contractor_profiles.last_name) SEPARATOR ', ') as contractors")
+            )
+            ->groupBy(
+                'leads.id',
+                'leads.name',
+                'leads.email',
+                'leads.category',
+                'leads.zip',
+                'leads.created_at'
+            ) // Add all non-aggregated columns here
+            ->latest()
+            ->get();
+
+            dd($Leads);
         }else if(Gate::allows('only-contractor')){
              $Leads = Lead::leftjoin('lead_assign','leads.id', '=', 'lead_assign.lead_id')->leftjoin('contractor_profiles','contractor_profiles.id','=','lead_assign.contractor_id')->select('leads.*', 'lead_assign.contractor_id','contractor_profiles.first_name','contractor_profiles.last_name')->where('contractor_id',$contractor->id)->latest()->get();
         }else{
@@ -346,11 +369,19 @@ class LeadController extends Controller
          $category = $request->category;
         $service = Service::where('name', $category)->first();
         $service_cost = $service->price;
-        LeadAssign::where('lead_id',$Lead->id)->delete();
-
-        $contractor_ids = $request->contractor_id;
+        // LeadAssign::where('lead_id',$Lead->id)->delete();
         
-        //dd($contractor_ids);
+        $contractor_ids = $request->contractor_id;
+
+        $current_contractors = LeadAssign::where('lead_id', $Lead->id)->pluck('contractor_id')->toArray();
+
+        // Check for contractors to remove (those not in the new request)
+        $contractors_to_remove = array_diff($current_contractors, $contractor_ids ?? []);
+        if (!empty($contractors_to_remove)) {
+            LeadAssign::where('lead_id', $Lead->id)
+                ->whereIn('contractor_id', $contractors_to_remove)
+                ->delete();
+        }
         
         if(isset($contractor_ids) && !empty($contractor_ids) && $contractor_ids != "unassigned"){
         foreach ($contractor_ids as $contractor_id) {
@@ -358,25 +389,31 @@ class LeadController extends Controller
             $old_balance = (!empty($wallet->balance)) ? $wallet->balance : 0;
 
             if (!empty($wallet) && ($wallet->balance > $service_cost)) {
-                $new_balance = $old_balance - $service_cost;
-                $wallet->balance = $new_balance;
-                $wallet->save();
+                $LeadAssign = LeadAssign::firstOrNew(
+                    [
+                        'contractor_id' => $contractor_id,
+                        'lead_id' => $Lead->id,
+                    ]
+                );
+                
+                if (!$LeadAssign->exists) {
+                    $LeadAssign->save();
 
-                $Payment = new Payment();
-                $Payment->contractor_id = $contractor_id;
-                $Payment->amount = $service_cost;
-                $Payment->payment_id = 'db_' . Str::random(24);
-                $Payment->currency = 'usd';
-                $Payment->captured = '1';
-                $Payment->paid = '1';
-                $Payment->status = 'succeeded';
-                $Payment->transaction_type = 'Debited';
-                $Payment->save();
-        
-                $LeadAssign = new LeadAssign(); // Assuming you need to create a new instance for each contractor_id
-                $LeadAssign->contractor_id = $contractor_id;
-                $LeadAssign->lead_id = $Lead->id;
-                $LeadAssign->save();
+                    $new_balance = $old_balance - $service_cost;
+                    $wallet->balance = $new_balance;
+                    $wallet->save();
+    
+                    $Payment = new Payment();
+                    $Payment->contractor_id = $contractor_id;
+                    $Payment->amount = $service_cost;
+                    $Payment->payment_id = 'db_' . Str::random(24);
+                    $Payment->currency = 'usd';
+                    $Payment->captured = '1';
+                    $Payment->paid = '1';
+                    $Payment->status = 'succeeded';
+                    $Payment->transaction_type = 'Debited';
+                    $Payment->save();
+                }
             } else {
                 $contractor_id = "unassigned";
         
